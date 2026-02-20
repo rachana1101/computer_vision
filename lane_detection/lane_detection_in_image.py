@@ -14,7 +14,68 @@ import cv2 as cv
 import numpy as np
 import os
 
-def draw_lane_lines(image, lines, color=[0, 0, 255], thickness=5):
+"""
+"HoughLinesP returns fragmented line segments due to noise/occlusion. 
+I average the endpoints (x1,y1,x2,y2) across all left/right fragments to create one smooth representative lane line per side.
+This gives clean visualization and stable lane tracking."
+"""
+def average_lines(lines_list):
+    """
+    Average multiple Hough lines → single smooth lane line
+    Input: List of HoughLinesP arrays [array([[x1,y1,x2,y2]])]
+    Output: Single averaged line array or None
+    """
+    if lines_list is None or len(lines_list) == 0:
+        return None
+    
+    # Extract coordinates CORRECTLY from Hough format
+    x1s = []
+    y1s = []
+    x2s = []
+    y2s = []
+    
+    for line in lines_list:
+        # HoughLinesP format: line = array([[x1,y1,x2,y2]])
+        coords = line[0]  # Get [x1,y1,x2,y2]
+        x1s.append(coords[0])
+        y1s.append(coords[1])
+        x2s.append(coords[2])
+        y2s.append(coords[3])
+    
+    # Average → single smooth line
+    avg_x1, avg_y1 = int(np.mean(x1s)), int(np.mean(y1s))
+    avg_x2, avg_y2 = int(np.mean(x2s)), int(np.mean(y2s))
+    
+    # Return OpenCV expected format: array([[[x1,y1,x2,y2]]])
+    return np.array([[[avg_x1, avg_y1, avg_x2, avg_y2]]])
+
+def identify_lanes(lines, width): 
+    left_lines = []
+    right_lines = [] 
+
+    if lines is not None: 
+        for line in lines: 
+            x1, y1, x2, y2 = line[0]
+
+            #find the slope
+            slope = (y2 - y1) / (x2 -x1) if x2 != x1 else 0 
+
+            if x2 == x1: continue  # Skip vertical lines
+            
+            slope = (y2 - y1) / (x2 - x1)
+            # Use CENTER of line, not just x1
+            x_center = (x1 + x2) / 2
+            
+            # LEFT: negative slope (/) + left side 
+            if slope < 0 and x_center < width/2: 
+                left_lines.append(line)
+            # RIGHT: positive slope (\) + right side  
+            elif slope > 0 and x_center > width/2: 
+                right_lines.append(line)
+
+    return left_lines, right_lines            
+
+def draw_lane_lines(image, leftlines, rightlines, leftcolor=[0, 0, 255], rightcolor=[0,255,0], thickness=5):
     """
     Draw Hough Transform lines onto the original image with weighted blending.
     
@@ -34,11 +95,17 @@ def draw_lane_lines(image, lines, color=[0, 0, 255], thickness=5):
     - Single pass through all lines = O(n) efficiency
     """
     line_image = np.zeros_like(image)  # Black canvas same shape as input
-    if lines is not None:  # Defensive check - Hough may return None
-        for line in lines:
+    if leftlines is not None:  # Defensive check - Hough may return None
+        for line in leftlines:
             # line[0] unpacks to [x1,y1,x2,y2] - OpenCV HoughLinesP format
             x1, y1, x2, y2 = line[0]
-            cv.line(line_image, (x1, y1), (x2, y2), color, thickness)
+            cv.line(line_image, (x1, y1), (x2, y2), leftcolor, thickness)
+
+    if rightlines is not None:  # Defensive check - Hough may return None
+        for line in rightlines:
+            # line[0] unpacks to [x1,y1,x2,y2] - OpenCV HoughLinesP format
+            x1, y1, x2, y2 = line[0]
+            cv.line(line_image, (x1, y1), (x2, y2), rightcolor, thickness)            
     
     # Alpha blend: 100% original + 100% lines = bright overlay
     return cv.addWeighted(image, 1.0, line_image, 1.0, 0.0)
@@ -137,14 +204,25 @@ if __name__ == "__main__":
         minLineLength=40,
         maxLineGap=100
     )
-    
-    # STEP 7: Draw & Display Results
-    result = draw_lane_lines(img, lines, color=[0, 255, 0], thickness=8)  # Green, thicker
-    
-    print("✅ Lane detection complete!")
-    cv.imshow("Lane Detection Result", result)
+
+   # After HoughLinesP (STEP 6)...
+    print(f"🔍 Total Hough lines detected: {len(lines) if lines is not None else 0}")
+
+    # STEP 7-8: FIXED lane identification + averaging
+    left_lines_raw, right_lines_raw = identify_lanes(lines, width)
+    left_lines_avg = average_lines(left_lines_raw) if left_lines_raw else None
+    right_lines_avg = average_lines(right_lines_raw) if right_lines_raw else None
+
+    # STEP 9: Draw results
+    result = draw_lane_lines(img, left_lines_avg, right_lines_avg, 
+                            leftcolor=[0, 255, 0], rightcolor=[0, 0, 255], thickness=8)
+
+    print("✅ BOTH LANES DETECTED!")
+    cv.imshow("Left(GREEN) + Right(RED)", result)
     cv.waitKey(0)
     cv.destroyAllWindows()
+
+    
     
     print("🎯 Portfolio Project #1: 60% Complete!")
     print("Next: Left/Right lane separation → Video processing")
