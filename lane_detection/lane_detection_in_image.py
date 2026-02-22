@@ -13,6 +13,32 @@ GitHub: https://github.com/rachana1101/computer-vision
 import cv2 as cv
 import numpy as np
 import os
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import cross_val_score
+import numpy as np
+
+
+def calc_slope(line):
+    """Compute slope from a single Hough line: line = array([[x1,y1,x2,y2]])"""
+    x1, y1, x2, y2 = line[0]
+    if x2 == x1:
+        return 0.0  # or np.nan, but 0 is fine for now
+    return (y2 - y1) / (x2 - x1)
+
+
+def extract_ml_features():
+    """Run lane detection → return ML-ready feature dict"""
+    # Your entire existing pipeline here...
+    # (copy everything from if __name__ == "__main__":)
+    
+    # Return features at end:
+    return {
+        'total_lines': len(lines) if lines is not None else 0,
+        'left_fragment_count': len(left_lines_raw),
+        'right_fragment_count': len(right_lines_raw),
+        'avg_left_slope': np.mean([calc_slope(l) for l in left_lines_raw]) if left_lines_raw else 0.0,
+        'line_consistency': len(left_lines_raw) / max(len(lines), 1)
+    }
 
 """
 "HoughLinesP returns fragmented line segments due to noise/occlusion. 
@@ -226,3 +252,37 @@ if __name__ == "__main__":
     
     print("🎯 Portfolio Project #1: 60% Complete!")
     print("Next: Left/Right lane separation → Video processing")
+
+
+    real_features = extract_ml_features()
+    print("Real image ML Features:", real_features)
+
+    #Train/validation/test split
+    dataset = []
+    for i in range(100):  # Simulate 100 road images
+        dataset.append({
+            'features': {'total_lines': np.random.randint(5, 30), 
+                        'left_fragment_count': np.random.randint(1, 15)},
+            'label': 'clear' if np.random.randint(5, 30) > 15 else 'broken'
+        })
+
+    # 60/20/20 SPLIT (your cross validation knowledge!)
+    train = dataset[:60]
+    val = dataset[60:80]  
+    test = dataset[80:]
+
+
+    # Features matrix + labels
+    X_train = [[d['features']['total_lines'], d['features']['left_fragment_count']] for d in train]
+    y_train = [1 if d['label'] == 'clear' else 0 for d in train]
+
+    model = LogisticRegression()
+    scores = cross_val_score(model, X_train, y_train, cv=5) 
+    print(f"✅ Cross Val Accuracy: {scores.mean():.2f} ± {scores.std():.2f}")
+
+    X_real = [[real_features['total_lines'], real_features['left_fragment_count']]]
+    prediction = model.fit(X_train, y_train).predict(X_real)
+    print(f"🎯 Your lane image quality: {'CLEAR' if prediction[0] else 'BROKEN'}")
+
+
+

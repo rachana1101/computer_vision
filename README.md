@@ -13,7 +13,7 @@
 
 | # | Project | Status | Demo |
 |---|---------|--------|------|
-| 1 | [Lane Detection](#1-lane-detection) | ⏳ Planned | Canny → HoughLinesP → Robotics lanes |
+| 1 | [Lane Detection](#1-lane-detection) | ⏳ Planned | Canny → HoughLinesP → Road lanes |
 | 2 | [Document Scanner](#2-document-scanner) | ⏳ Planned | Contours → Perspective Transform |
 | 3 | [QR Scanner](#3-qr-scanner) | ⏳ Planned | Live webcam → Production ready |
 | 4 | [Object Tracker](#4-object-tracker) | ⏳ Planned | Meanshift → Surveillance/robotics |
