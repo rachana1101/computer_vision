@@ -5,6 +5,7 @@ Classical Computer Vision pipeline demonstrating:
 1. Canny edge detection → HoughLinesP → Lane line visualization
 2. Region of Interest (ROI) masking for road area
 3. Production-ready error handling + visualization
+4. ML training with the prediction of if the lane image quality is poor or clear
 
 Author: Rachana (rachana1101
 GitHub: https://github.com/rachana1101/computer-vision
@@ -283,6 +284,3 @@ if __name__ == "__main__":
     X_real = [[real_features['total_lines'], real_features['left_fragment_count']]]
     prediction = model.fit(X_train, y_train).predict(X_real)
     print(f"🎯 Your lane image quality: {'CLEAR' if prediction[0] else 'BROKEN'}")
-
-
-
