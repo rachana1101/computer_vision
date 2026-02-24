@@ -5,8 +5,6 @@
 
 **Classical Computer Vision projects demonstrating OpenCV mastery for robotics & interview preparation**
 
-**Learning Progress**: Coursera Camera & Imaging (Module 4 ✅) | Kevin Wood OpenCV (Feature Detection ✅)
-
 ---
 
 ## 📁 Projects
