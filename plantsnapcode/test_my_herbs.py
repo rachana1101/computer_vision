@@ -1,3 +1,5 @@
+<<<<<<< Updated upstream
+=======
 # ***
 
 # ## What You Did: PlantSnap Training Summary
@@ -74,6 +76,7 @@
 # **"Why ln(70) as the random baseline?"**
 # > "With 70 equally likely classes, a random model assigns 1/70 probability to each. Cross-entropy of uniform random guessing = −log(1/70) = ln(70) ≈ 4.25."
 
+>>>>>>> Stashed changes
 import torch
 import torch.nn as nn
 from torchvision import datasets, transforms, models
