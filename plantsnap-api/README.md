@@ -23,7 +23,7 @@ application.properties  =   .env file
 
 
 
-#Java world anology#
+## Java world anology ##
 Java world:                Python world:
 ─────────────────────────────────────────
 Tomcat / Jetty             Uvicorn / Gunicorn
@@ -35,7 +35,7 @@ Passes to your code        Passes to your code
 Returns responses          Returns responses
 
 
-#Technology Stack#
+## Technology Stack ##
     iOS app sends:
     POST /feedback
     {
@@ -51,7 +51,7 @@ Returns responses          Returns responses
     Response:   {"id": 1, "status": "saved"} back to iOS ✅
 
 
-#FastAPI#
+## FastAPI ##
 
     The web framework — the main thing!
 
@@ -71,7 +71,7 @@ Returns responses          Returns responses
     using IKEA furniture ← FastAPI is IKEA 😄
 
 
-#Uvicorn#
+## Uvicorn ##
     The server — actually RUNS your FastAPI app
 
     What it does:
@@ -92,7 +92,7 @@ Returns responses          Returns responses
     Uvicorn = the waiter who takes orders
                 and brings food out 😄
 
-#SQLAlchemy#
+## SQLAlchemy ##
     The database toolkit — talks to SQLite
 
     What it does:
@@ -112,7 +112,7 @@ Returns responses          Returns responses
     SQLAlchemy = translator between
     Python and the database 😄
 
-#Pydantic# 
+## Pydantic ## 
     Data validation — checks inputs are correct
 
     What it does:
@@ -135,7 +135,7 @@ Returns responses          Returns responses
     checking everyone has correct ID
     before letting them in 😄
 
-#Deployment# 
+## Deployment ## 
 
 AWS/Google Cloud:
   Massive general purpose cloud
@@ -158,10 +158,10 @@ Builds Docker container automatically
       ↓
 Runs on Railway's OWN servers
       ↓
-Gives you a public URL instantly ✅ 
+Gives you a public URL instantly 
 
 
-#Table explanation#
+## Table explanation ##
 field            source              purpose
 ─────────────────────────────────────────────────────
 image_id         iOS generates UUID  link feedback to specific scan
@@ -178,9 +178,9 @@ Current design:
   Server stores: "image_id, predicted=basil, correct=chamomile"
   
   Retraining needs:
-  actual_chamomile_photo.jpg + label "chamomile" ✅
+  actual_chamomile_photo.jpg + label "chamomile" 
   
-  Without the image → useless for retraining! ❌
+  Without the image → useless for retraining! 
 
 ## Solution 1 — Upload image WITH feedback (simplest) ##
 When user corrects herb:
@@ -193,7 +193,7 @@ Server stores:
     Feedback → SQLite with image path
 
 Simple! But images take storage space.
-For portfolio project → totally fine ✅
+For portfolio project → totally fine 
 
 ## Solution 2 — Store image on device, upload separately ##
 
@@ -202,26 +202,26 @@ Step 1: User scans herb
   "550e8400.jpg" saved to device
 
 Step 2: User corrects prediction
-  Feedback sent immediately (tiny JSON) ✅
+  Feedback sent immediately (tiny JSON) 
 
 Step 3: Background upload when on WiFi
   Image uploaded separately
-  Matched by same UUID ✅
+  Matched by same UUID 
 
-Better for battery + data usage ✅
-More complex to implement ❌
+Better for battery + data usage 
+More complex to implement 
 
 ## Solution 3 — Only upload low-confidence images ## 
 
 CoreML confidence > 0.8:
   Model was confident → probably right
-  Don't bother uploading image ✅
+  Don't bother uploading image 
   
 CoreML confidence < 0.5:
   Model was unsure → upload image!
-  This is where retraining helps most ✅
+  This is where retraining helps most 
 
-Saves storage + bandwidth ✅
+Saves storage + bandwidth 
 
 ## For PlantSnap — recommended approach: ## 
 Best for your portfolio right now:
@@ -230,25 +230,25 @@ Best for your portfolio right now:
   If confidence < 0.7 AND user corrects:
     Upload image + feedback together
     Store image on server
-    Use for retraining ✅
+    Use for retraining 
 
   If confidence > 0.7:
     Just store feedback JSON
-    Model was confident, less urgent ✅
+    Model was confident, less urgent 
 
 
 ## The problem with Solution 1+3 at scale: ## 
 Portfolio stage (now):
   10-100 users
-  Images stored on Railway server ✅
-  SQLite database ✅
+  Images stored on Railway server 
+  SQLite database 
   Works perfectly!
 
 Production stage (1000+ users):
-  Railway server disk fills up 😱
-  SQLite gets slow with concurrent writes 😱
-  Images lost if server restarts 😱
-  Can't scale horizontally 😱    
+  Railway server disk fills up 
+  SQLite gets slow with concurrent writes 
+  Images lost if server restarts 
+  Can't scale horizontally    
 
 ## The actual production architecture ##
 
@@ -264,14 +264,14 @@ PostgreSQL      S3 Bucket
 Database (PostgreSQL):
   Stores TEXT data efficiently
   Fast queries and relationships
-  NOT designed for binary files ❌
+  NOT designed for binary files 
 
 Object Storage (S3/GCS):
   Designed specifically for files/images
-  Infinitely scalable ✅
-  Cheap ($0.023/GB on AWS) ✅
-  CDN built in ✅
-  Never loses files ✅
+  Infinitely scalable 
+  Cheap ($0.023/GB on AWS) 
+  CDN built in 
+  Never loses files 
   
 Rule of thumb:
   Metadata → database
@@ -292,12 +292,12 @@ Step 3: FastAPI generates presigned S3 URL
 
 Step 4: iOS uploads DIRECTLY to S3
    PUT image → S3 (bypasses your server!)
-   Fast, cheap, no server bottleneck ✅
+   Fast, cheap, no server bottleneck 
 
 Step 5: iOS sends feedback JSON to API
    POST /feedback
    {image_id, predicted, correct, confidence}
-   NO image in this request! ✅
+   NO image in this request! 
 
 Step 6: FastAPI stores in PostgreSQL:
    {image_id, s3_path, predicted, correct...}  
@@ -307,22 +307,22 @@ Step 6: FastAPI stores in PostgreSQL:
 Without presigned URLs:
   iOS → FastAPI → S3
   Image goes through YOUR server
-  Bandwidth costs $$$ 💸
-  Server bottleneck ❌
-  Slow ❌
+  Bandwidth costs $$$ 
+  Server bottleneck 
+  Slow 
 
 With presigned URLs:
-  iOS → S3 directly! ✅
+  iOS → S3 directly! 
   FastAPI just generates the permission
-  Server never touches the image ✅
-  Fast ✅
-  Cheap ✅
-  Scales infinitely ✅
+  Server never touches the image 
+  Fast 
+  Cheap 
+  Scales infinitely 
 
 Same pattern used by:
-  Instagram photo uploads ✅
-  Dropbox file uploads ✅
-  WhatsApp media ✅   
+  Instagram photo uploads 
+  Dropbox file uploads 
+  WhatsApp media    
 
 
 ## The complete production stack: ## 
@@ -340,12 +340,12 @@ No CDN                       CloudFront CDN
 Local (no .env):
   USE_S3 = False
   Images saved to feedback_images/ folder
-  Works perfectly for development ✅
+  Works perfectly for development 
 
 Railway (with env vars set):
   USE_S3 = True
   Images saved to S3 automatically
-  Same code, different behaviour! ✅
+  Same code, different behaviour! 
 
 No code changes needed between environments!
-Just environment variables change ✅
+Just environment variables change 
