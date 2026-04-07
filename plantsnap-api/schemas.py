@@ -9,7 +9,8 @@ class FeedbackCreate(BaseModel):
     confidence:     float
     device_id:      Optional[str] = "anonymous"
     app_version:    Optional[str] = "1.0"
-    image_base64:   Optional[str] = None  # ← image from iOS
+    image_base64:   Optional[str] = None  
+    is_new_herb:    Optional[bool] = False
 
 class FeedbackResponse(BaseModel):
     id:             int
@@ -17,7 +18,7 @@ class FeedbackResponse(BaseModel):
     predicted_herb: str
     correct_herb:   str
     confidence:     float
-    created_at:     Optional[datetime] = None  # ← make Optional!
+    created_at:     Optional[datetime] = None 
 
     class Config:
         from_attributes = True
