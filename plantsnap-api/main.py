@@ -97,15 +97,39 @@ def submit_feedback(
 ):
     log.info("─" * 40)
     log.info(f"📥 New feedback received:")
-    log.info(f"   image_id:       {feedback.image_id}")
     log.info(f"   predicted_herb: {feedback.predicted_herb}")
     log.info(f"   correct_herb:   {feedback.correct_herb}")
     log.info(f"   confidence:     {feedback.confidence:.2f}")
-    log.info(f"   device_id:      {feedback.device_id}")
-    log.info(f"   app_version:    {feedback.app_version}")
-    log.info(f"   has_image:      {feedback.image_base64 is not None}")
 
     local_path = None
     s3_key     = None
 
-    # Only
+    if feedback.image_base64 and feedback.confidence < CONFIDENCE_THRESHOLD:
+        log.info(f"📸 Saving image — confidence below threshold")
+        local_path, s3_key = save_image(
+            feedback.image_id,
+            feedback.image_base64
+        )
+
+    db_feedback = models.Feedback(
+        image_id       = feedback.image_id,
+        predicted_herb = feedback.predicted_herb,
+        correct_herb   = feedback.correct_herb,
+        confidence     = feedback.confidence,
+        device_id      = feedback.device_id,
+        app_version    = feedback.app_version,
+        image_path     = local_path,
+        s3_key         = s3_key
+    )
+    db.add(db_feedback)
+    db.commit()
+    db.refresh(db_feedback)  # ← this should be there
+
+    # ← ADD THIS — force created_at to populate
+    db.expire(db_feedback)
+    db.refresh(db_feedback)
+
+    log.info(f"✅ Saved → id: {db_feedback.id}")
+    log.info("─" * 40)
+
+    return db_feedback
