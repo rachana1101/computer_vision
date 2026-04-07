@@ -1,6 +1,7 @@
 import requests
 import json
 import sys
+import time
 
 # ── CONFIG ────────────────────────────────────────────
 BASE_URL = "https://computer-vision-yin8.onrender.com"
@@ -118,12 +119,31 @@ def test_invalid_confidence():
     test("Invalid confidence type returns 422",
          r.status_code == 422,
          f"Got {r.status_code} instead of 422")
+    
+
+def wake_up_server():
+    """Ping server and wait for it to wake up"""
+    print("⏳ Waking up server...")
+    for attempt in range(5):
+        try:
+            r = requests.get(f"{BASE_URL}/", timeout=35)
+            if r.status_code == 200:
+                print("✅ Server is awake!")
+                time.sleep(1)  # small buffer
+                return
+        except:
+            pass
+        print(f"   Attempt {attempt + 1}/5 — waiting...")
+        time.sleep(5)
+    print("⚠️ Server may still be waking up")    
 
 # ── RUN ALL TESTS ──────────────────────────────────────
 if __name__ == "__main__":
     print(f"\n🌿 PlantSnap API Test Suite")
     print(f"📡 Testing: {BASE_URL}")
     print("─" * 40)
+
+    wake_up_server()
 
     test_health()
     test_version()

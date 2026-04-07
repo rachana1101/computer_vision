@@ -137,3 +137,73 @@ def submit_feedback(
     log.info("─" * 40)
 
     return db_feedback
+
+# ── POST /metrics ─────────────────────────────────────
+@app.post("/metrics")
+def submit_metric(
+    metric: schemas.MetricCreate,
+    db: Session = Depends(get_db)
+):
+    log.info(f"📊 Metric: {metric.herb_name} | "
+             f"conf: {metric.confidence:.2f} | "
+             f"correct: {metric.was_correct}")
+
+    db_metric = models.Metric(
+        herb_name   = metric.herb_name,
+        confidence  = metric.confidence,
+        was_correct = metric.was_correct,
+        device_id   = metric.device_id
+    )
+    db.add(db_metric)
+    db.commit()
+    log.info(f"✅ Metric saved")
+    return {"status": "metric recorded ✅"}
+
+
+# ── GET /version ──────────────────────────────────────
+@app.get("/version", response_model=schemas.VersionResponse)
+def get_version():
+    log.info("📱 Version check requested")
+    return {
+        "model_version":    "1.0.0",
+        "min_app_version":  "1.0.0",
+        "update_available": False
+    }
+
+
+# ── GET /feedback/stats ───────────────────────────────
+@app.get("/feedback/stats")
+def get_stats(db: Session = Depends(get_db)):
+    total = db.query(models.Feedback).count()
+    with_images = db.query(models.Feedback).filter(
+        (models.Feedback.image_path != None) |
+        (models.Feedback.s3_key != None)
+    ).count()
+
+    log.info(f"📈 Stats: {total} total, {with_images} with images")
+    return {
+        "total_feedback":   total,
+        "images_collected": with_images,
+        "storage_type":     "S3" if USE_S3 else "local"
+    }
+
+
+# ── GET /feedback/all ─────────────────────────────────
+@app.get("/feedback/all")
+def get_all_feedback(db: Session = Depends(get_db)):
+    feedbacks = db.query(models.Feedback)\
+                  .order_by(models.Feedback.created_at.desc())\
+                  .all()
+
+    log.info(f"📋 Returning {len(feedbacks)} feedback records")
+    return [{
+        "id":             f.id,
+        "predicted_herb": f.predicted_herb,
+        "correct_herb":   f.correct_herb,
+        "confidence":     f.confidence,
+        "is_new_herb":    f.is_new_herb if hasattr(f, 'is_new_herb') else False,
+        "image_saved":    f.s3_key is not None or
+                          f.image_path is not None,
+        "s3_key":         f.s3_key,
+        "created_at":     str(f.created_at)
+    } for f in feedbacks]
