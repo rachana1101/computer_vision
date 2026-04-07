@@ -31,6 +31,10 @@ S3_BUCKET  = os.getenv("S3_BUCKET_NAME")
 AWS_REGION = os.getenv("AWS_REGION", "us-west-2")
 USE_S3     = bool(S3_BUCKET)
 
+# Confidence threshold for image saving
+CONFIDENCE_THRESHOLD = float(os.getenv("CONFIDENCE_THRESHOLD", "0.7"))
+log.info(f"Confidence threshold: {CONFIDENCE_THRESHOLD}")
+
 s3_client = None
 if USE_S3:
     s3_client = boto3.client(
