@@ -17,7 +17,7 @@ class FeedbackResponse(BaseModel):
     predicted_herb: str
     correct_herb:   str
     confidence:     float
-    created_at:     datetime
+    created_at:     Optional[datetime] = None  # ← make Optional!
 
     class Config:
         from_attributes = True
