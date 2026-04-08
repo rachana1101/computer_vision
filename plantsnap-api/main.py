@@ -207,3 +207,27 @@ def get_all_feedback(db: Session = Depends(get_db)):
         "s3_key":         f.s3_key,
         "created_at":     str(f.created_at)
     } for f in feedbacks]
+
+# ── POST /admin/flush-db ──────────────────────────────
+@app.post("/admin/flush-db")
+def flush_database(db: Session = Depends(get_db)):
+    """
+    ⚠️ DANGER: Deletes ALL feedback and metrics!
+    Use only for testing/demo reset.
+    """
+    feedback_count = db.query(models.Feedback).count()
+    metrics_count  = db.query(models.Metric).count()
+
+    db.query(models.Feedback).delete()
+    db.query(models.Metric).delete()
+    db.commit()
+
+    log.warning(f"⚠️ Database flushed!")
+    log.warning(f"   Deleted {feedback_count} feedback records")
+    log.warning(f"   Deleted {metrics_count} metric records")
+
+    return {
+        "status":           "database flushed ✅",
+        "deleted_feedback": feedback_count,
+        "deleted_metrics":  metrics_count
+    }

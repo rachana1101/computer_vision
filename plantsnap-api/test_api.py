@@ -5,6 +5,7 @@ import time
 
 # ── CONFIG ────────────────────────────────────────────
 BASE_URL = "https://computer-vision-yin8.onrender.com"
+           #https://computer-vision-yin8.onrender.com
 # BASE_URL = "http://localhost:8000"  # uncomment for local testing
 
 PASS = "✅"
@@ -136,6 +137,16 @@ def wake_up_server():
         print(f"   Attempt {attempt + 1}/5 — waiting...")
         time.sleep(5)
     print("⚠️ Server may still be waking up")    
+
+def test_flush_db():
+    """Test flush endpoint exists and works"""
+    r = requests.post(f"{BASE_URL}/admin/flush-db")
+    test("Flush DB endpoint returns 200",
+         r.status_code == 200)
+    test("Flush DB returns status",
+         "status" in r.json())
+    test("Flush DB returns deleted counts",
+         "deleted_feedback" in r.json())    
 
 # ── RUN ALL TESTS ──────────────────────────────────────
 if __name__ == "__main__":
