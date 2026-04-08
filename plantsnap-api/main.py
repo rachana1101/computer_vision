@@ -161,32 +161,21 @@ def submit_metric(
 
 
 # ── GET /version ──────────────────────────────────────
+# ── Model versions config ─────────────────────────────
+# Update these after each retraining run!
+MODEL_VERSION    = os.getenv("MODEL_VERSION", "1.0")
+MODEL_URL        = os.getenv("MODEL_URL", None)
+UPDATE_AVAILABLE = os.getenv("UPDATE_AVAILABLE", "false").lower() == "true"
+
 @app.get("/version", response_model=schemas.VersionResponse)
 def get_version():
-    log.info("📱 Version check requested")
+    log.info(f"📱 Version check → current: {MODEL_VERSION}")
     return {
-        "model_version":    "1.0.0",
-        "min_app_version":  "1.0.0",
-        "update_available": False
+        "model_version":    MODEL_VERSION,
+        "min_app_version":  "1.0",
+        "update_available": UPDATE_AVAILABLE,
+        "model_url":        MODEL_URL
     }
-
-
-# ── GET /feedback/stats ───────────────────────────────
-@app.get("/feedback/stats")
-def get_stats(db: Session = Depends(get_db)):
-    total = db.query(models.Feedback).count()
-    with_images = db.query(models.Feedback).filter(
-        (models.Feedback.image_path != None) |
-        (models.Feedback.s3_key != None)
-    ).count()
-
-    log.info(f"📈 Stats: {total} total, {with_images} with images")
-    return {
-        "total_feedback":   total,
-        "images_collected": with_images,
-        "storage_type":     "S3" if USE_S3 else "local"
-    }
-
 
 # ── GET /feedback/all ─────────────────────────────────
 @app.get("/feedback/all")
@@ -230,4 +219,25 @@ def flush_database(db: Session = Depends(get_db)):
         "status":           "database flushed ✅",
         "deleted_feedback": feedback_count,
         "deleted_metrics":  metrics_count
+    }
+
+# Add to main.py — auto-notify when threshold hit!
+
+@app.get("/feedback/stats")
+def get_stats(db: Session = Depends(get_db)):
+    total = db.query(models.Feedback).count()
+    with_images = db.query(models.Feedback).filter(
+        models.Feedback.s3_key != None
+    ).count()
+
+    # Retraining recommendation
+    retrain_ready = with_images >= 100
+
+    return {
+        "total_feedback":   total,
+        "images_collected": with_images,
+        "retrain_ready":    retrain_ready,  # ← NEW!
+        "retrain_message":  "🎯 Ready to retrain!" 
+                            if retrain_ready 
+                            else f"Need {100 - with_images} more images"
     }

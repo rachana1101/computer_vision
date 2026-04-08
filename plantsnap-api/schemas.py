@@ -33,3 +33,4 @@ class VersionResponse(BaseModel):
     model_version:    str
     min_app_version:  str
     update_available: bool
+    model_url:        Optional[str] = None
